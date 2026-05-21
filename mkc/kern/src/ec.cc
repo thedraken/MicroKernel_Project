@@ -23,6 +23,7 @@
 #include "ptab.h"
 #include "multiboot.h"
 #include "elf.h"
+#include "FiFo.h"
 
 Ec * Ec::current = 0;
 
@@ -142,13 +143,20 @@ void Ec::syscall_handler (uint8 n)
         sys_dump();
         break;
 
+    case 1:          // create_ec
+        sys_create_ec();
+        break;
+
+    case 2:          // yield
+        sys_yield();
+        break;
+
     default:
         printf ("syscall %d - unknown\n", n);
         break;
-	}
+    }
 
     ret_user_sysexit();
-
     UNREACHED;
 }
 
@@ -183,5 +191,37 @@ void Ec::handle_exc (Exc_regs *r)
 
     panic ("%s EXC %#lx (EIP=%#lx CR2=%#lx)\n", r->eip < LINK_ADDR ? "User" : "Kernel", r->vec, r->eip, r->cr2);
 
+    UNREACHED;
+}
+
+void Ec::sys_create_ec()
+{
+    mword user_eip = current->sys_regs()->esi;
+    mword user_esp = current->sys_regs()->edi;
+
+    printf("EC:%p SYS_CREATE_EC: eip=%#lx esp=%#lx\n", current, user_eip, user_esp);
+
+    Ec *ec = new Ec(user_eip, user_esp);   // uses the (mword,mword) constructor
+    fi_fo.enqueue(ec);                     // new EC is immediately ready
+
+    printf("EC:%p created new EC %p\n", current, ec);
+
+    // return to caller
+    ret_user_sysexit();
+}
+
+void Ec::sys_yield()
+{
+    printf("EC:%p SYS_YIELD\n", current);
+    current->cont = ret_user_sysexit;
+    fi_fo.enqueue(current);
+
+    Ec *next = fi_fo.dequeue();
+    if (!next) {
+        printf("ERROR: ready list empty!\n");
+        current->make_current();  // resume self
+        UNREACHED;
+    }
+    next->make_current();
     UNREACHED;
 }

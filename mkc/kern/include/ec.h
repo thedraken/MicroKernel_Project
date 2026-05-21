@@ -47,9 +47,13 @@ class Ec
 
     public:
         static Ec * current;
+        static void sys_create_ec();
+        static void sys_yield();
 
         Ec (void (*)(), mword = 0);
         Ec (mword, mword);
+
+        Ec *next_item = nullptr;
 
         ALWAYS_INLINE NORETURN
         inline void make_current()
