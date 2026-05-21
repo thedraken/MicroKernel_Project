@@ -87,7 +87,7 @@ void Ec::root_invoke()
     if (!(mbi->flags & 8) || (mbi->mods_count != 1))
         panic ("exactly ONE multi boot module is required.\n");
 
-    // load module desciptor
+    // load module descriptor
     Multiboot_module mod = *static_cast<Multiboot_module *>(Ptab::remap (mbi->mods_addr));
 
     printf ("load module from %x - %x (%u bytes) : ", mod.mod_start, mod.mod_end, mod.mod_end - mod.mod_start);
