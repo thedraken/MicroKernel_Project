@@ -11,6 +11,11 @@ class FiFo {
 public:
     FiFo() : head(nullptr), tail(nullptr) {}
 
+    void init() {
+        printf("FIFO: init");
+        head = nullptr; tail = nullptr;
+    }
+
     // Enqueue at tail
     void enqueue(Ec *ec) {
         printf("FIFO: enqueue EC %p\n", ec);

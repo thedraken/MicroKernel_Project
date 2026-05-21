@@ -4,4 +4,4 @@
 
 #include "FiFo.h"
 
-FiFo fi_fo;   // the one global ready list
+FiFo fi_fo; 

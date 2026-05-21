@@ -79,6 +79,8 @@ void Ec::ret_user_iret()
 
 void Ec::root_invoke()
 {
+    fi_fo.init();
+
     // find multi boot info
     Multiboot * mbi = static_cast<Multiboot *>(Ptab::remap (current->regs.eax));
 
