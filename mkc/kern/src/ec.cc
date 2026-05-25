@@ -53,6 +53,7 @@ void Ec::ret_user_iret() {
 }
 
 void Ec::root_invoke() {
+    printf("root_invoke started\n");
     fi_fo.init();
 
     auto *mbi = static_cast<Multiboot *>(Ptab::remap(current->regs.eax));
