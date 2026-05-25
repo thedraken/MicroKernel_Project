@@ -24,73 +24,78 @@
 #include "kalloc.h"
 #include "memory.h"
 
-class Ec
-{
+class Ec {
     void (*cont)();
 
-    Exc_regs    regs;
+    Exc_regs regs;
 
-        REGPARM (1)
-        static void handle_exc (Exc_regs *) asm ("exc_handler");
+    REGPARM(1)
+    static void handle_exc(Exc_regs *) asm ("exc_handler");
 
-        NORETURN
-        static void handle_tss() asm ("tss_handler");
+    NORETURN
+    static void handle_tss() asm ("tss_handler");
 
-        static bool handle_exc_ts (Exc_regs *);
+    static bool handle_exc_ts(Exc_regs *);
 
-        ALWAYS_INLINE
-        inline Sys_regs *sys_regs() { return &regs; }
+    ALWAYS_INLINE
+    inline Sys_regs *sys_regs() { return &regs; }
 
-        ALWAYS_INLINE
-        inline Exc_regs *exc_regs() { return &regs; }
+    ALWAYS_INLINE
+    inline Exc_regs *exc_regs() { return &regs; }
 
-    public:
-        unsigned ec_priority = 0;
-    static Ec * current;
-        static void sys_create_ec();
-        static void sys_yield();
-        static void sys_block();
+public:
+    unsigned ec_priority = 0;
+    static Ec *current;
 
-    static void sys_unblock_all();
+    static void sys_create_ec() __attribute__((noreturn));
+
+    static void sys_yield() __attribute__((noreturn));
+
+    static void sys_block() __attribute__((noreturn));
+
+    static void sys_unblock_all() __attribute__((noreturn));
 
     Ec(void (*)(), mword = 0);
-        Ec (mword eip, mword esp) : Ec(eip, esp, 0) {
+
+    Ec(mword eip, mword esp) : Ec(eip, esp, 0) {
     }
 
     Ec(mword eip, mword esp, unsigned prio = 0);
 
     Ec *next_item = nullptr;
 
-        ALWAYS_INLINE NORETURN
-        inline void make_current()
-        {
-            current = this;
+    ALWAYS_INLINE NORETURN
+    inline void make_current() {
+        current = this;
 
-            Tss::run.sp0 = reinterpret_cast<mword>(exc_regs() + 1);
+        Tss::run.sp0 = reinterpret_cast<mword>(exc_regs() + 1);
 
-            asm volatile ("mov %0, %%esp;"
-                          "jmp *%1"
-                          : : "g" (KSTCK_ADDR + PAGE_SIZE), "rm" (cont) : "memory"); UNREACHED;
-        }
+        asm volatile ("mov %0, %%esp;"
+            "jmp *%1"
+            : : "g" (KSTCK_ADDR + PAGE_SIZE), "rm" (cont) : "memory");
+        UNREACHED;
+    }
 
-        HOT NORETURN
-        static void ret_user_sysexit();
+    HOT NORETURN
+    static void ret_user_sysexit();
 
-        NORETURN
-        static void ret_user_iret() asm ("ret_user_iret");
+    NORETURN
+    static void ret_user_iret() asm ("ret_user_iret");
 
-        NORETURN
-        static void root_invoke();
+    NORETURN
+    static void root_invoke();
 
-        HOT NORETURN REGPARM (1)
-        static void syscall_handler (uint8) asm ("syscall_handler");
+    HOT NORETURN REGPARM(1)
+    static void syscall_handler(uint8) asm ("syscall_handler");
 
-        NORETURN
-        static void sys_dump();
+    NORETURN
+    static void sys_dump();
 
-        ALWAYS_INLINE
-        static inline void *operator new (size_t) { return Kalloc::allocator.alloc(sizeof (Ec)); }
+    ALWAYS_INLINE
+    static inline void *operator new(size_t) { return Kalloc::allocator.alloc(sizeof(Ec)); }
 
-        ALWAYS_INLINE
-        static inline void operator delete (void *) { /* nop */ }
+    ALWAYS_INLINE
+    static inline void operator delete(void *) {
+        /* nop */
+    }
 };

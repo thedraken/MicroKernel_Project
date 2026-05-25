@@ -64,7 +64,7 @@ void FiFo::enqueue(Ec *ec, unsigned prio) {
 }
 
 Ec *FiFo::dequeue() {
-    for (int p = (int) NUM_PRIO - 1; p >= 0; --p) {
+    for (int p = static_cast<int>(NUM_PRIO) - 1; p >= 0; --p) {
         FifoQueue &q = ready[p];
         if (q.empty())
             continue;
