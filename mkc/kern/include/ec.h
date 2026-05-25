@@ -23,13 +23,12 @@
 #include "tss.h"
 #include "kalloc.h"
 #include "memory.h"
-#include "stdio.h"
 
 class Ec
 {
-    private:
-        void        (*cont)();
-        Exc_regs    regs;
+    void (*cont)();
+
+    Exc_regs    regs;
 
         REGPARM (1)
         static void handle_exc (Exc_regs *) asm ("exc_handler");
@@ -46,14 +45,21 @@ class Ec
         inline Exc_regs *exc_regs() { return &regs; }
 
     public:
-        static Ec * current;
+        unsigned ec_priority = 0;
+    static Ec * current;
         static void sys_create_ec();
         static void sys_yield();
+        static void sys_block();
 
-        Ec (void (*)(), mword = 0);
-        Ec (mword, mword);
+    static void sys_unblock_all();
 
-        Ec *next_item = nullptr;
+    Ec(void (*)(), mword = 0);
+        Ec (mword eip, mword esp) : Ec(eip, esp, 0) {
+    }
+
+    Ec(mword eip, mword esp, unsigned prio = 0);
+
+    Ec *next_item = nullptr;
 
         ALWAYS_INLINE NORETURN
         inline void make_current()

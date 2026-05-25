@@ -36,21 +36,43 @@ static unsigned syscall3(unsigned w0, unsigned w1, unsigned w2)
     return w0;
 }
 
+static unsigned syscall4(unsigned w0, unsigned w1, unsigned w2, unsigned w3) {
+    asm volatile (
+        "mov %%esp, %%ecx ;"
+        "mov $1f,   %%edx ;"
+        "sysenter         ;"
+        "1:               ;"
+        : "+a" (w0) : "S" (w1), "D" (w2), "b" (w3) : "ecx", "edx");
+    return w0;
+}
+
 static void sys_yield()
 {
     syscall1(2);
 }
 
-static void sys_create_ec(mword eip, mword esp)
-{
-    syscall3(1, eip, esp);
+static void sys_create_ec(mword eip, mword esp, unsigned prio) {
+    syscall4(1, eip, esp, prio);
 }
 
-static char stack_b[4096];
-static char stack_c[4096];
+static void sys_block() {
+    syscall1(3);
+}
+
+static void sys_unblock_all() {
+    syscall1(4);
+}
+
+static char stack_b1[4096];
+static char stack_b2[4096];
+static char stack_c1[4096];
+static char stack_c2[4096];
 
 static void thread_b()
 {
+    syscall1(0);
+    sys_block();
+
     for (int i = 0; i < 3; i++) {
         syscall1(0);
         sys_yield();
@@ -60,6 +82,9 @@ static void thread_b()
 
 static void thread_c()
 {
+    syscall1(0);
+    sys_block();
+
     for (int i = 0; i < 3; i++) {
         syscall1(0);
         sys_yield();
@@ -70,10 +95,17 @@ static void thread_c()
 EXTERN_C NORETURN
 void main_func()
 {
-    sys_create_ec((mword)thread_b, (mword)(stack_b + sizeof(stack_b)));
-    sys_create_ec((mword)thread_c, (mword)(stack_c + sizeof(stack_c)));
+    sys_create_ec((mword) thread_b, (mword) (stack_b1 + sizeof(stack_b1)), 2);
+    sys_create_ec((mword) thread_b, (mword) (stack_b2 + sizeof(stack_b2)), 2);
+    sys_create_ec((mword) thread_c, (mword) (stack_c1 + sizeof(stack_c1)), 1);
+    sys_create_ec((mword) thread_c, (mword) (stack_c2 + sizeof(stack_c2)), 1);
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 6; i++)
+        sys_yield();
+
+    sys_unblock_all();
+
+    for (int i = 0; i < 10; i++)
         sys_yield();
 
     while (1) ;
