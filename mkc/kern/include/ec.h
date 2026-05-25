@@ -38,10 +38,10 @@ class Ec {
     static bool handle_exc_ts(Exc_regs *);
 
     ALWAYS_INLINE
-    inline Sys_regs *sys_regs() { return &regs; }
+    Sys_regs *sys_regs() { return &regs; }
 
     ALWAYS_INLINE
-    inline Exc_regs *exc_regs() { return &regs; }
+    Exc_regs *exc_regs() { return &regs; }
 
 public:
     unsigned ec_priority = 0;
@@ -65,7 +65,7 @@ public:
     Ec *next_item = nullptr;
 
     ALWAYS_INLINE NORETURN
-    inline void make_current() {
+    void make_current() {
         current = this;
 
         Tss::run.sp0 = reinterpret_cast<mword>(exc_regs() + 1);
@@ -92,10 +92,10 @@ public:
     static void sys_dump();
 
     ALWAYS_INLINE
-    static inline void *operator new(size_t) { return Kalloc::allocator.alloc(sizeof(Ec)); }
+    void *operator new(size_t) { return Kalloc::allocator.alloc(sizeof(Ec)); }
 
     ALWAYS_INLINE
-    static inline void operator delete(void *) {
+    void operator delete(void *) {
         /* nop */
     }
 };
